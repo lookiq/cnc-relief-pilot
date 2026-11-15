@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relief Pilot, ডিজাইন থেকে CNC রিলিফ</title>
+<meta name="description" content="Test build: design image upload kore relief preview dekhe STL, heightmap ba DXF download korun.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="frame">
+  <header class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 22 Q8 14 13 20 T23 18 T29 21" fill="none" stroke="#1b6c80" stroke-width="2.4" stroke-linecap="round"/><path d="M3 15 Q9 8 15 13 T26 11" fill="none" stroke="#1b6c80" stroke-width="2.4" stroke-linecap="round" opacity=".55"/><path d="M3 8 Q8 3 14 7 T24 5" fill="none" stroke="#1b6c80" stroke-width="2.4" stroke-linecap="round" opacity=".3"/></svg>
+      <span class="brand-name">Relief Pilot</span>
+      <span class="pill">Test build</span>
+    </div>
+    <p class="topbar-note">ডিজাইন ছবি → রিলিফ প্রিভিউ → মেশিন ফাইল</p>
+  </header>
+
+  <main class="sheet">
+    <div class="title-row">
+      <div>
+        <h1>ডিজাইন থেকে রিলিফ বানান</h1>
+        <p class="subtitle">ছবি আপলোড করুন, প্রিভিউ দেখে অনুমোদন করুন, তারপর ফাইল ডাউনলোড করুন।</p>
+      </div>
+    </div>
+
+    <div class="layout">
+      <!-- Controls -->
+      <section class="rail" aria-label="সেটিংস">
+        <h2>ডিজাইন দিন</h2>
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="ছবি আপলোড করুন">
+          <p class="drop-main">ছবি টেনে ছাড়ুন, বা ক্লিক করুন</p>
+          <p class="drop-sub">JPG / PNG · সামনে থেকে তোলা, পরিষ্কার ছবি সবচেয়ে ভালো</p>
+          <input type="file" id="fileInput" accept="image/*" hidden>
+        </div>
+        <details class="guide">
+          <summary>ভালো ছবি তোলার নির্দেশনা</summary>
+          <ul>
+            <li>সামনে থেকে সোজাসুজি তুলুন, বাঁকা ছবি বেঁকে যাবে।</li>
+            <li>সমান আলো রাখুন, ছায়া পড়লে সেটা খাঁজ হয়ে যেতে পারে।</li>
+            <li>ডিজাইনটা ফ্রেম ভরে তুলুন, চারপাশে ফাঁকা জায়গা কম রাখুন।</li>
+            <li>ঝাপসা নয়, পরিষ্কার ও ধারালো ছবি দিন।</li>
+          </ul>
+        </details>
+
+        <h2>মোড</h2>
+        <div class="segmented" role="group" aria-label="মোড">
+          <button type="button" class="seg active" data-mode="relief">Relief (নকশা)</button>
+          <button type="button" class="seg" data-mode="dxf">DXF লাইন (জালি)</button>
+        </div>
+
+        <h2>প্যানেলের মাপ</h2>
+        <div class="presets" role="group" aria-label="প্রিসেট">
+          <button type="button" class="preset active" data-w="900" data-h="2100">দরজা · 900×2100</button>
+          <button type="button" class="preset" data-w="1800" data-h="1050">খাট · 1800×1050</button>
+          <button type="button" class="preset" data-w="900" data-h="1200">জানালা · 900×1200</button>
+          <button type="button" class="preset" data-w="500" data-h="1800">ওয়ারড্রব পাল্লা · 500×1800</button>
+          <button type="button" class="preset" data-custom="1">নিজের মাপ</button>
+        </div>
+        <div class="size-row">
+          <label>চওড়া (mm) <input type="number" id="widthMm" value="900" min="50" max="4000" step="1"></label>
+          <label>উচ্চতা (mm) <input type="number" id="heightMm" value="2100" min="50" max="4000" step="1"></label>
+        </div>
+
+        <h2>খোদাই সেটিং</h2>
+        <label class="slider-label">গভীরতা (Depth) <output id="depthOut">12 mm</output>
+          <input type="range" id="depth" min="5" max="25" step="1" value="12">
+        </label>
+        <label class="slider-label">মসৃণতা (Smoothing) <output id="smoothOut">1.5</output>
+          <input type="range" id="smoothing" min="0" max="3" step="0.5" value="1.5">
+        </label>
+        <label class="check"><input type="checkbox" id="invert"> উল্টো করুন (Invert), আলো উল্টো হলে</label>
+
+        <h2>বিট নির্বাচন</h2>
+        <label class="select-label">Roughing (ফ্ল্যাট)
+          <select id="roughBit">
+            <option value="6" selected>6 mm ফ্ল্যাট</option>
+            <option value="8">8 mm ফ্ল্যাট</option>
+            <option value="10">10 mm ফ্ল্যাট</option>
+          </select>
+        </label>
+        <label class="select-label">Finishing (বল নোজ)
+          <select id="finishBit">
+            <option value="3" selected>3 mm বল নোজ</option>
+            <option value="2">2 mm বল নোজ</option>
+            <option value="1">1 mm বল নোজ</option>
+          </select>
+        </label>
+        <p class="base-note">বেস 5 mm · গভীরতার সীমা ফিনিশিং বিটের 4 গুণ পর্যন্ত।</p>
+      </section>
+
+      <!-- Canvas -->
+      <section class="canvas" aria-label="প্রিভিউ ও ডাউনলোড">
+        <div class="empty" id="emptyState">
+          <p class="empty-title">এখনো কোনো ডিজাইন দেওয়া হয়নি</p>
+          <p>বাম পাশ থেকে ছবি আপলোড করলে এখানে রিলিফ প্রিভিউ দেখা যাবে।</p>
+        </div>
+
+        <div class="previews" id="previews" hidden>
+          <figure class="preview-card">
+            <figcaption>Heightmap (2D)</figcaption>
+            <canvas id="heightCanvas" width="448" height="448"></canvas>
+          </figure>
+          <figure class="preview-card">
+            <figcaption>Shaded প্রিভিউ <span class="fig-note">— 3× বেশি উঁচু করে দেখানো, শুধু দেখার জন্য</span></figcaption>
+            <canvas id="shadeCanvas" width="448" height="448"></canvas>
+          </figure>
+        </div>
+
+        <div class="spec-block" id="specBlock" hidden>
+          <h2>স্পেসিফিকেশন</h2>
+          <table class="spec-table">
+            <tbody>
+              <tr><th>প্যানেল</th><td id="specSize">—</td></tr>
+              <tr><th>গভীরতা</th><td id="specDepth">—</td></tr>
+              <tr><th>গ্রিড</th><td id="specGrid">—</td></tr>
+              <tr><th>রিলিফ মোড</th><td>Brightness (test build), AI-depth মিক্স পূর্ণ সংস্করণে আসবে</td></tr>
+              <tr><th>বিট</th><td id="specBits">—</td></tr>
+            </tbody>
+          </table>
+          <div class="warnings" id="warnings" aria-live="polite"></div>
+        </div>
+
+        <div class="qc-block" id="qcBlock" hidden>
+          <h2>যাচাই ও ডাউনলোড</h2>
+          <p class="qc-note">প্রিভিউ ভালো করে দেখুন। ঠিক মনে হলে অনুমোদন করুন, তারপর ডাউনলোড খুলবে।</p>
+          <button type="button" class="approve" id="approveBtn">প্রিভিউ অনুমোদন করলাম</button>
+          <p class="working" id="workingMsg" hidden>ফাইল তৈরি হচ্ছে… একটু অপেক্ষা করুন।</p>
+          <div class="downloads">
+            <button type="button" class="dl" id="dlStl" disabled>STL ডাউনলোড</button>
+            <button type="button" class="dl" id="dlPng" disabled>Heightmap PNG (16-bit)</button>
+            <button type="button" class="dl" id="dlDxf" disabled hidden>DXF ডাউনলোড</button>
+            <button type="button" class="dl" id="dlRough" disabled>Roughing নির্দেশনা (.txt)</button>
+            <button type="button" class="dl" id="dlFinish" disabled>Finishing নির্দেশনা (.txt)</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="sheet-footer">
+      <p><strong>সত্য কথাটা জেনে রাখুন:</strong> STL ফাইল সরাসরি মেশিনে চলে না, JDPaint বা Aspire-এ টুলপাথ বানাতে হয়। সরাসরি .NC G-code রপ্তানি পরের ধাপে আসবে। .ENG ফরম্যাট ওয়েব থেকে বানানো এখনো প্রমাণিত নয়। একটা ছবি থেকে আসল গভীরতা মাপা যায় না, ফলাফল অনুমাননির্ভর, তাই টেস্ট কাট দিয়ে মিলিয়ে নিন।</p>
+    </footer>
+  </main>
+</div>
+
+<div class="gate" id="gate">
+  <div class="gate-card" role="dialog" aria-labelledby="gateTitle">
+    <h1 id="gateTitle">Relief Pilot</h1>
+    <p>এটি একটি পরীক্ষামূলক সংস্করণ। প্রবেশের পাসকোড দিন।</p>
+    <label class="gate-label">পাসকোড
+      <input type="password" id="passcode" inputmode="numeric" autocomplete="off" placeholder="••••••">
+    </label>
+    <button type="button" class="gate-btn" id="gateBtn">প্রবেশ করুন</button>
+    <p class="gate-error" id="gateError" hidden>পাসকোড মেলেনি। আবার চেষ্টা করুন।</p>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
